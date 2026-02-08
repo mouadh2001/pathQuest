@@ -5,11 +5,11 @@ class GameScene extends Phaser.Scene {
 
   preload() {
     // Chargement des images
-    this.load.image("bg", "assets/background.png");
-    this.load.image("idel", "assets/idel1.png");
-    this.load.image("walk", "assets/walk1.png");
-    this.load.image("jump", "assets/jump1.png");
-    this.load.image("jumpOut", "assets/jump2.png");
+    this.load.image("bg", "./assets/background.png");
+    this.load.image("idel", "./assets/idel1.png");
+    this.load.image("walk", "./assets/walk1.png");
+    this.load.image("jump", "./assets/jump1.png");
+    this.load.image("jumpOut", "./assets/jump2.png");
   }
 
   create() {
@@ -120,7 +120,7 @@ const config = {
       debug: false, // Change en true pour voir les boîtes de collision
     },
   },
-  scene: GameScene,
+  scene: [LabScene, GameScene],
 };
 
 new Phaser.Game(config);
