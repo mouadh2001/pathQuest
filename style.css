@@ -1,0 +1,119 @@
+/* ===== Reset & Body ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Press Start 2P", cursive, Arial, sans-serif;
+  background-image: url(./assets/loginbg.png);
+  background-repeat: no-repeat; /* Don’t repeat */
+  background-position: center center; /* Center the image */
+  background-size: cover;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* ===== Login Container ===== */
+#login-container {
+  background: rgba(0, 0, 0, 0.85);
+  padding: 40px 50px;
+  border-radius: 15px;
+  box-shadow: 0 0 25px rgba(78, 84, 200, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 350px;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+/* ===== Headings ===== */
+#login-container h2 {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 25px;
+  text-shadow: 0 0 10px #4e54c8;
+}
+
+/* ===== Inputs ===== */
+#login-form input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 10px 0;
+  border: 2px solid #4e54c8;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 14px;
+  text-shadow: 0 0 2px #000;
+  transition: all 0.3s ease;
+}
+
+#login-form input:focus {
+  border-color: #8f94fb;
+  box-shadow: 0 0 10px #8f94fb;
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Button ===== */
+#login-form button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: linear-gradient(45deg, #4e54c8, #8f94fb);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 10px #4e54c8;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+#login-form button:hover {
+  background: linear-gradient(45deg, #8f94fb, #4e54c8);
+  box-shadow: 0 0 20px #8f94fb;
+  transform: scale(1.05);
+}
+
+/* ===== Error Message ===== */
+#error-message {
+  color: #ff4c4c;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+  text-shadow: 0 0 5px #000;
+}
+
+/* ===== Game Container ===== */
+#game-container {
+  width: 100%;
+  height: 100vh;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 400px) {
+  #login-container {
+    width: 90%;
+    padding: 30px 20px;
+  }
+}

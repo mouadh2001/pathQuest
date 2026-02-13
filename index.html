@@ -1,19 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Phaser Character (No Sprite Sheet)</title>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <style>
-    body {
-      margin: 0;
-      background: #1e1e1e;
-    }
-  </style>
-</head>
-<body align="center">
-    <script></script>
-  <script src="./Scenes/labScene.js"></script>
-  <script src="./Scenes/gameScene.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phaser Character (No Sprite Sheet)</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body align="center">
+    <!-- LOGIN CONTAINER -->
+    <div
+      id="login-container"
+
+    >
+      <h2 style="color: white">Path Quest</h2>
+
+      <form
+        id="login-form"
+        style="display: flex; flex-direction: column; width: 300px"
+      >
+        <input
+          type="email"
+          id="email"
+          placeholder="Email"
+          required
+          style="margin: 10px; padding: 10px"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          required
+          style="margin: 10px; padding: 10px"
+        />
+        <button type="submit" style="padding: 10px; margin: 10px">Login</button>
+        <p id="error-message" style="color: red; text-align: center"></p>
+      </form>
+    </div>
+
+    <!-- GAME CONTAINER -->
+    <div id="game-container" style="display: none"></div>
+
+    <!-- Phaser -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+
+    <!-- Scenes -->
+    <script src="./Scenes/labScene.js"></script>
+    <script src="./Scenes/gameScene.js"></script>
+
+    <!-- Auth -->
+    <script src="./auth.js"></script>
+  </body>
 </html>

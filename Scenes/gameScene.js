@@ -16,7 +16,7 @@ class GameScene extends Phaser.Scene {
     // Configuration de la physique
     this.physics.world.gravity.y = 1000;
     const worldWidth = 1600; // Largeur du niveau
-    const worldHeight = 630;
+    const worldHeight = window.innerHeight; // Hauteur du niveau (adaptée à la taille de l'écran)
 
     // 1. Background (Adapté à la taille de l'écran et fixe)
     let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
@@ -112,15 +112,31 @@ class GameScene extends Phaser.Scene {
 // Configuration du jeu
 const config = {
   type: Phaser.AUTO,
-  width: 1200,
-  height: 630,
+
+  // Set initial width/height to window size
+  width: window.innerWidth,
+  height: window.innerHeight,
+
+  scale: {
+    mode: Phaser.Scale.RESIZE,       // Canvas resizes automatically to fit window
+    autoCenter: Phaser.Scale.CENTER_BOTH, // Center the canvas
+  },
+
   physics: {
     default: "arcade",
     arcade: {
-      debug: false, // Change en true pour voir les boîtes de collision
+      debug: false,
     },
   },
+
   scene: [LabScene, GameScene],
 };
 
-new Phaser.Game(config);
+
+let gameInstance = null;
+
+function startGame() {
+  if (!gameInstance) {
+    gameInstance = new Phaser.Game(config);
+  }
+}
