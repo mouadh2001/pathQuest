@@ -36,8 +36,10 @@ loginForm.addEventListener("submit", async (e) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
       },
       body: JSON.stringify({ email, password }),
+      cache: "no-store",
     });
 
     const data = await response.json();
