@@ -1,7 +1,7 @@
 // ===============================
 // CONFIG
 // ===============================
-const API_URL = "http://localhost:5000/api/player"; // CHANGE THIS
+const API_URL = "https://pathquestadmin.onrender.com/api/player"; // CHANGE THIS
 
 // ===============================
 // DOM
