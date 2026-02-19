@@ -4,7 +4,7 @@ class LabScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("lab", "./assets/scene1.png");
+    this.load.image("lab", "../assets/scene1.png");
   }
 
   create() {

@@ -1,0 +1,310 @@
+class GameScene extends Phaser.Scene {
+  constructor() {
+    super({ key: "GameScene" });
+  }
+
+  preload() {
+    this.load.image("bg", "../assets/background.png");
+    this.load.image("idel", "../assets/idel1.png");
+    this.load.image("walk", "../assets/walk1.png");
+    this.load.image("jump", "../assets/jump1.png");
+    this.load.image("jumpOut", "../assets/jump2.png");
+    this.load.image("scope", "../assets/scope.png");
+    this.load.image("loupe", "../assets/loupe.png");
+    this.load.image("tumor", "../assets/tumeur.jpg");
+    this.load.image("scopeloop", "../assets/scopeloupe.png");
+    this.load.image("platforme", "../assets/platforme.png");
+  }
+
+  create() {
+    this.physics.world.gravity.y = 1000;
+    const worldWidth = 1600;
+    const worldHeight = window.innerHeight;
+
+    // 1. Background
+    let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
+    bg.setDepth(0);
+    let scale = Math.max(
+      this.cameras.main.width / bg.width,
+      this.cameras.main.height / bg.height,
+    );
+    bg.setScale(scale).setScrollFactor(0);
+
+    // 2. Platforms
+    this.platforms = this.physics.add.staticGroup();
+    this.createFloor(800, 610, 1600, 40); // Floor
+    this.createPlatform(400, 450, 200, 20); // Platform 1 (Q1)
+    this.createPlatform(800, 350, 250, 20); // Platform 2 (Q2)
+    this.createPlatform(1100, 250, 200, 20); // Platform 3 (Locked + Zoom)
+    this.createPlatform(1400, 400, 200, 20); // Platform 4 (Loupe)
+
+    // 3. Player
+    this.player = this.physics.add.image(100, 500, "idel");
+    this.player.setDepth(2);
+    this.player.setScale(0.7).setCollideWorldBounds(true);
+    this.player.body.setSize(60, 160);
+    this.physics.add.collider(this.player, this.platforms);
+
+    // 4. Camera & World
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.playerState = "idel";
+
+    // 5. Items & Flags
+    this.items = this.physics.add.staticGroup();
+    this.hasLoupe = false;
+    this.popupOpen = false;
+    this.canShowWarning = true; // Prevents alert spamming
+
+    // Setup Items
+    this.addScope(400, 380, "q1", false); // P1: Easy
+    this.addScope(800, 280, "q2", false); // P2: Easy
+    this.addScopeLoop(1100, 180, "tumor_v", true); // P3: LOCKED & ZOOM
+    this.addLoupe(1400, 360); // P4: Loupe Source
+
+    this.physics.add.overlap(
+      this.player,
+      this.items,
+      this.handleItemCollision,
+      null,
+      this,
+    );
+
+    this.createHTMLModal();
+  }
+
+  createFloor(x, y, width, height) {
+    const rect = this.add.rectangle(x, y, width, height, 0x000000, 0);
+    rect.setDepth(0);
+    this.platforms.add(rect);
+  }
+  createPlatform(x, y, width, height) {
+    let platform = this.platforms.create(x, y, "platforme");
+
+    // Resize the body
+    platform.displayWidth = width;
+    platform.displayHeight = height;
+    platform.setDisplaySize(width, height);
+
+    platform.refreshBody(); // VERY IMPORTANT
+    platform.setDepth(1);
+
+    return platform;
+  }
+
+  addScope(x, y, questionId, locked) {
+    let scope = this.items.create(x, y, "scope");
+    scope.setScale(0.2);
+    scope.refreshBody();
+    scope.questionId = questionId;
+    scope.locked = locked;
+  }
+  addScopeLoop(x, y, questionId, locked) {
+    let scope = this.items.create(x, y, "scopeloop");
+    scope.setScale(0.2);
+    scope.refreshBody();
+    scope.questionId = questionId;
+    scope.locked = locked;
+  }
+
+  addLoupe(x, y) {
+    let loupe = this.items.create(x, y, "loupe");
+    loupe.setScale(0.2);
+    loupe.refreshBody();
+    loupe.isLoupe = true;
+  }
+
+  handleItemCollision(player, item) {
+    if (this.popupOpen) return;
+
+    // Logic: Pick up Loupe
+    if (item.isLoupe) {
+      this.hasLoupe = true;
+      item.destroy();
+      alert("🔍 Loupe collected! Now analyze the slide on the third platform.");
+      return;
+    }
+
+    // Logic: Locked Item Prevention (Spam Fix)
+    if (item.locked && !this.hasLoupe) {
+      if (this.canShowWarning) {
+        this.canShowWarning = false;
+        alert(
+          "This slide is too complex! You need the Loupe from the 4th platform first.",
+        );
+
+        // Cooldown timer: Only allow the alert once every 3 seconds
+        this.time.delayedCall(3000, () => {
+          this.canShowWarning = true;
+        });
+      }
+      return;
+    }
+
+    // Logic: Open Menus
+    this.currentScope = item;
+    if (item.questionId === "tumor_v") {
+      this.openTumorMenu();
+    } else {
+      this.openQCM(item.questionId);
+    }
+  }
+
+  openTumorMenu() {
+    this.popupOpen = true;
+    this.physics.pause();
+    const centerX = this.cameras.main.centerX;
+    const centerY = this.cameras.main.centerY;
+
+    this.tumorUI = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    let bg = this.add.rectangle(centerX, centerY, 2000, 2000, 0x000000, 0.85);
+
+    // The Slide Image
+    let tumorImg = this.add
+      .image(centerX, centerY, "tumor")
+      .setScale(0.5)
+      .setInteractive();
+
+    let txt = this.add
+      .text(
+        centerX,
+        centerY + 280,
+        "SCROLL TO ZOOM | CLICK IMAGE TO DIAGNOSE",
+        {
+          fontSize: "20px",
+          color: "#fff",
+          fontStyle: "bold",
+        },
+      )
+      .setOrigin(0.5);
+
+    this.tumorUI.add([bg, tumorImg, txt]);
+
+    // Interactive Zoom Logic
+    this.input.on("wheel", (pointer, currentlyOver, dx, dy) => {
+      if (!this.tumorUI) return;
+      if (dy > 0 && tumorImg.scale > 0.3)
+        tumorImg.setScale(tumorImg.scale - 0.05);
+      else if (dy < 0 && tumorImg.scale < 2.5)
+        tumorImg.setScale(tumorImg.scale + 0.05);
+    });
+
+    tumorImg.once("pointerdown", () => {
+      this.tumorUI.destroy();
+      this.tumorUI = null;
+      this.openQCM("q_tumor");
+    });
+  }
+
+  openQCM(id) {
+    this.popupOpen = true;
+    this.physics.pause();
+
+    const questions = {
+      q1: {
+        q: "What is a tumor?",
+        a: ["A virus", "Abnormal cell growth", "Healthy tissue"],
+        c: 1,
+      },
+      q2: {
+        q: "Benign tumors usually stay in one place?",
+        a: ["True", "False"],
+        c: 0,
+      },
+      q_tumor: {
+        q: "Based on the zoom, what characterizes these cells?",
+        a: ["Uniform shape", "Irregular borders and nuclei", "Normal size"],
+        c: 1,
+      },
+    };
+
+    const data = questions[id];
+    document.getElementById("modal-question").innerText = data.q;
+    const container = document.getElementById("modal-answers");
+    container.innerHTML = "";
+
+    data.a.forEach((ans, i) => {
+      const b = document.createElement("button");
+      b.innerText = ans;
+      b.style =
+        "margin:10px; padding:10px 15px; cursor:pointer; font-size:16px;";
+      b.onclick = () => {
+        if (i === data.c) {
+          alert("✅ Correct Analysis!");
+          if (this.currentScope) this.currentScope.destroy();
+        } else {
+          alert("❌ Incorrect. Re-examine the sample.");
+        }
+        this.closeModal();
+      };
+      container.appendChild(b);
+    });
+    document.getElementById("modal").style.display = "flex";
+  }
+
+  closeModal() {
+    document.getElementById("modal").style.display = "none";
+    this.physics.resume();
+    this.popupOpen = false;
+  }
+
+  update() {
+    if (this.popupOpen) return;
+    const onGround =
+      this.player.body.touching.down || this.player.body.blocked.down;
+    let velocityX = 0;
+    if (this.cursors.left.isDown) {
+      velocityX = -250;
+      this.player.setFlipX(true);
+    } else if (this.cursors.right.isDown) {
+      velocityX = 250;
+      this.player.setFlipX(false);
+    }
+    this.player.setVelocityX(velocityX);
+
+    if (!onGround) {
+      this.setPlayerState(this.player.body.velocity.y < 0 ? "jump" : "jumpOut");
+    } else {
+      if (velocityX !== 0) this.setPlayerState("walk");
+      else this.setPlayerState("idel");
+      if (this.cursors.up.isDown) this.player.setVelocityY(-550);
+    }
+  }
+
+  setPlayerState(s) {
+    if (this.playerState === s) return;
+    this.playerState = s;
+    this.player.setTexture(s);
+  }
+
+  createHTMLModal() {
+    if (document.getElementById("modal")) return;
+    let m = document.createElement("div");
+    m.id = "modal";
+    m.style =
+      "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:9999;";
+    m.innerHTML = `<div style="background:white;padding:30px;border-radius:10px;text-align:center;font-family:Arial;max-width:400px;">
+        <h2 id="modal-question"></h2>
+        <div id="modal-answers"></div>
+    </div>`;
+    document.body.appendChild(m);
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  physics: { default: "arcade", arcade: { debug: false } },
+  scene: [LabScene, GameScene],
+};
+let game = null;
+
+function startGame() {
+  if (!game) {
+    game = new Phaser.Game(config);
+  }
+}
