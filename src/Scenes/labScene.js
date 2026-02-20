@@ -45,25 +45,38 @@ class LabScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.resize();
-    this.scale.on("resize", this.resize, this);
+this.scale.on("resize", this.resize, this);
+this.resize({ width: this.scale.width, height: this.scale.height });
   }
 
-  resize() {
-    const { width, height } = this.cameras.main;
-    this.bg.setPosition(width / 2, height / 2);
+resize(gameSize) {
+  if (!this.bg) return;
 
-    const scale = Math.min(width / this.bg.width, height / this.bg.height);
-    this.bg.setScale(scale);
+  const width = this.scale.width;
+  const height = this.scale.height;
 
-    // 3. Calculate the specific spot (e.g., 300, 400 from your original image)
-    // This formula ensures the spot stays pinned to the image content
-    const x = this.bg.x + (260 - this.bg.width / 2) * scale;
-    const y = this.bg.y + (695 - this.bg.height / 2) * scale;
+  // Center background
+  this.bg.setPosition(width / 2, height / 2);
 
-    // Move everything to that exact spot
-    this.hotspot.setPosition(x, y).setScale(scale);
-    this.circle.setPosition(x, y).setScale(scale);
-    this.lvlText.setPosition(x + 1 * scale, y - 120 * scale).setScale(scale);
-  }
+  // Scale background to fit screen
+  const scale = Math.min(width / this.bg.width, height / this.bg.height);
+  this.bg.setScale(scale);
+
+  // --- RELATIVE POSITION ON IMAGE ---
+
+  // Original image coordinates where hotspot should be
+  const originalX = 260;
+  const originalY = 695;
+
+  // Convert image-space → screen-space
+  const x = this.bg.x + (originalX - this.bg.width / 2) * scale;
+  const y = this.bg.y + (originalY - this.bg.height / 2) * scale;
+
+  // Move UI elements
+  this.hotspot.setPosition(x, y).setScale(scale);
+  this.circle.setPosition(x, y).setScale(scale);
+  this.lvlText
+    .setPosition(x, y - 120 * scale)
+    .setScale(scale);
+}
 }

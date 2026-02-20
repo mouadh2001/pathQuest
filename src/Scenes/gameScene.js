@@ -29,14 +29,16 @@ class GameScene extends Phaser.Scene {
       this.cameras.main.height / bg.height,
     );
     bg.setScale(scale).setScrollFactor(0);
-
+    const bgBottom = bg.displayHeight;
+    const floorOffsetFromBottom = 310; // <-- adjust this once only
+    this.floorY = bg.displayHeight - floorOffsetFromBottom * scale;
     // 2. Platforms
     this.platforms = this.physics.add.staticGroup();
-    this.createFloor(800, 610, 1600, 40); // Floor
-    this.createPlatform(400, 450, 200, 20); // Platform 1 (Q1)
-    this.createPlatform(800, 350, 250, 20); // Platform 2 (Q2)
-    this.createPlatform(1100, 250, 200, 20); // Platform 3 (Locked + Zoom)
-    this.createPlatform(1400, 400, 200, 20); // Platform 4 (Loupe)
+    this.createFloor(worldWidth / 2, this.floorY, worldWidth, 40);
+    this.createPlatformRelative(400, 160, 200, 20);
+    this.createPlatformRelative(800, 260, 250, 20);
+    this.createPlatformRelative(1100, 360, 200, 20);
+    this.createPlatformRelative(1400, 210, 200, 20);
 
     // 3. Player
     this.player = this.physics.add.image(100, 500, "idel");
@@ -60,10 +62,10 @@ class GameScene extends Phaser.Scene {
     this.canShowWarning = true; // Prevents alert spamming
 
     // Setup Items
-    this.addScope(400, 380, "q1", false); // P1: Easy
-    this.addScope(800, 280, "q2", false); // P2: Easy
-    this.addScopeLoop(1100, 180, "tumor_v", true); // P3: LOCKED & ZOOM
-    this.addLoupe(1400, 360); // P4: Loupe Source
+    this.addScopeRelative(400, 230, "q1", false);
+    this.addScopeRelative(800, 330, "q2", false);
+    this.addScopeLoopRelative(1100, 430, "tumor_v", true);
+    this.addLoupeRelative(1400, 250);
 
     this.physics.add.overlap(
       this.player,
@@ -94,6 +96,10 @@ class GameScene extends Phaser.Scene {
 
     return platform;
   }
+  createPlatformRelative(x, heightAboveFloor, width, height) {
+    const y = this.floorY - heightAboveFloor;
+    return this.createPlatform(x, y, width, height);
+  }
 
   addScope(x, y, questionId, locked) {
     let scope = this.items.create(x, y, "scope");
@@ -115,6 +121,20 @@ class GameScene extends Phaser.Scene {
     loupe.setScale(0.2);
     loupe.refreshBody();
     loupe.isLoupe = true;
+  }
+  addScopeRelative(x, heightAboveFloor, questionId, locked) {
+    const y = this.floorY - heightAboveFloor;
+    return this.addScope(x, y, questionId, locked);
+  }
+
+  addScopeLoopRelative(x, heightAboveFloor, questionId, locked) {
+    const y = this.floorY - heightAboveFloor;
+    return this.addScopeLoop(x, y, questionId, locked);
+  }
+
+  addLoupeRelative(x, heightAboveFloor) {
+    const y = this.floorY - heightAboveFloor;
+    return this.addLoupe(x, y);
   }
 
   handleItemCollision(player, item) {
@@ -156,47 +176,76 @@ class GameScene extends Phaser.Scene {
   openTumorMenu() {
     this.popupOpen = true;
     this.physics.pause();
-    const centerX = this.cameras.main.centerX;
-    const centerY = this.cameras.main.centerY;
+    const cam = this.cameras.main;
 
-    this.tumorUI = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
-    let bg = this.add.rectangle(centerX, centerY, 2000, 2000, 0x000000, 0.85);
+    // Create centered UI container in SCREEN SPACE
+    this.tumorUI = this.add
+      .container(cam.width / 2, cam.height / 2)
+      .setDepth(1000);
 
-    // The Slide Image
-    let tumorImg = this.add
-      .image(centerX, centerY, "tumor")
-      .setScale(0.5)
-      .setInteractive();
-
-    let txt = this.add
-      .text(
-        centerX,
-        centerY + 280,
-        "SCROLL TO ZOOM | CLICK IMAGE TO DIAGNOSE",
-        {
-          fontSize: "20px",
-          color: "#fff",
-          fontStyle: "bold",
-        },
+    const overlay = this.add
+      .rectangle(
+        -cam.width / 3,
+        -cam.height / 2,
+        cam.width,
+        cam.height,
+        0x000000,
+        0.85,
       )
-      .setOrigin(0.5);
+      .setOrigin(0);
 
-    this.tumorUI.add([bg, tumorImg, txt]);
+    // Tumor image
+    const tumorImg = this.add
+      .image(0, -50, "tumor")
+      .setScale(0.5)
+      .setInteractive({ draggable: true });
 
-    // Interactive Zoom Logic
-    this.input.on("wheel", (pointer, currentlyOver, dx, dy) => {
-      if (!this.tumorUI) return;
-      if (dy > 0 && tumorImg.scale > 0.3)
-        tumorImg.setScale(tumorImg.scale - 0.05);
-      else if (dy < 0 && tumorImg.scale < 2.5)
-        tumorImg.setScale(tumorImg.scale + 0.05);
+    // Enable drag
+    this.input.setDraggable(tumorImg);
+    tumorImg.on("drag", (pointer, dragX, dragY) => {
+      tumorImg.x = dragX;
+      tumorImg.y = dragY;
     });
 
-    tumorImg.once("pointerdown", () => {
-      this.tumorUI.destroy();
-      this.tumorUI = null;
+    // Zoom
+    this.input.on("wheel", (pointer, gameObjects, dx, dy) => {
+      if (!this.tumorUI) return;
+      const newScale = Phaser.Math.Clamp(
+        tumorImg.scale + (dy > 0 ? -0.05 : 0.05),
+        0.3,
+        2.5,
+      );
+      tumorImg.setScale(newScale);
+    });
+
+    // Diagnose button
+    const button = this.add
+      .rectangle(0, 220, 200, 55, 0x1e90ff)
+      .setInteractive({ useHandCursor: true });
+    const text = this.add
+      .text(0, 220, "Diagnose", {
+        fontSize: "22px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+    button.on("pointerdown", () => {
+      this.closeTumorMenu();
       this.openQCM("q_tumor");
     });
+    this.tumorUI.add([overlay, tumorImg, button, text]);
+  }
+  closeTumorMenu() {
+    if (!this.tumorUI) return;
+
+    this.input.removeAllListeners("wheel");
+    this.input.removeAllListeners("drag");
+
+    this.tumorUI.destroy();
+    this.tumorUI = null;
+
+    this.physics.resume();
+    this.popupOpen = false;
   }
 
   openQCM(id) {
@@ -375,3 +424,5 @@ function startGame() {
     game = new Phaser.Game(config);
   }
 }
+
+//chekpoint
