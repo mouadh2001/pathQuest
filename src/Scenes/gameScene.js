@@ -14,13 +14,13 @@ class GameScene extends Phaser.Scene {
     this.load.image("tumor", "../assets/tumeur.jpg");
     this.load.image("scopeloop", "../assets/scopeloupe.png");
     this.load.image("platforme", "../assets/platforme.png");
+    this.load.image("enemy", "../assets/enemy.png");
   }
 
   create() {
-    this.physics.world.gravity.y = 1000;
-    const worldWidth = 1600;
+    this.physics.world.gravity.y = 1100;
+    const worldWidth = 1400;
     const worldHeight = window.innerHeight;
-
     // 1. Background
     let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
     bg.setDepth(0);
@@ -35,38 +35,51 @@ class GameScene extends Phaser.Scene {
     // 2. Platforms
     this.platforms = this.physics.add.staticGroup();
     this.createFloor(worldWidth / 2, this.floorY, worldWidth, 40);
-    this.createPlatformRelative(400, 160, 200, 20);
-    this.createPlatformRelative(800, 260, 250, 20);
-    this.createPlatformRelative(1100, 360, 200, 20);
-    this.createPlatformRelative(1400, 210, 200, 20);
-
+    this.createPlatformRelative(400, 140, 200, 20); //1st q platform
+    this.createPlatformRelative(800, 160, 200, 20); //loupe q platform
+    this.createPlatformRelative(1200, 180, 200, 20); //2nd q platform
+    this.createPlatformRelative(1100, 400, 200, 20); //loupe platform
+    this.createPlatformRelative(150, 270, 200, 20); //passe to enemy platform
+    this.createPlatformRelative(600, 400, 500, 20); //enemy platform
     // 3. Player
     this.player = this.physics.add.image(100, 500, "idel");
     this.player.setDepth(2);
-    this.player.setScale(0.7).setCollideWorldBounds(true);
+    this.player.setScale(0.5).setCollideWorldBounds(true);
     this.player.body.setSize(60, 160);
     this.physics.add.collider(this.player, this.platforms);
-
+    // Player spawn position
+    this.spawnX = 100;
+    this.spawnY = 500;
+    // Lives system
+    this.lives = 3;
+    // Display lives on screen
+    this.livesText = this.add
+      .text(20, 20, "Lives: 3", {
+        fontSize: "22px",
+        fill: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
     // 4. Camera & World
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-
     this.cursors = this.input.keyboard.createCursorKeys();
     this.playerState = "idel";
-
     // 5. Items & Flags
     this.items = this.physics.add.staticGroup();
     this.hasLoupe = false;
     this.popupOpen = false;
     this.canShowWarning = true; // Prevents alert spamming
-
     // Setup Items
-    this.addScopeRelative(400, 230, "q1", false);
-    this.addScopeRelative(800, 330, "q2", false);
-    this.addScopeLoopRelative(1100, 430, "tumor_v", true);
-    this.addLoupeRelative(1400, 250);
-
+    this.addScopeRelative(400, 180, "q1", false);
+    this.addScopeRelative(800, 200, "q2", false);
+    this.addScopeLoopRelative(1200, 220, "tumor_v", true);
+    this.addLoupeRelative(1100, 450);
+    // Enemy
+    this.enemies = this.physics.add.group();
+    this.createEnemyRelative(600, 430);
     this.physics.add.overlap(
       this.player,
       this.items,
@@ -74,8 +87,44 @@ class GameScene extends Phaser.Scene {
       null,
       this,
     );
-
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      this.handleEnemyCollision,
+      null,
+      this,
+    );
     this.createHTMLModal();
+  }
+
+  loseLife() {
+    this.lives--;
+    this.livesText.setText("Lives: " + this.lives);
+    // Reset player position
+    this.player.setPosition(this.spawnX, this.spawnY);
+    this.player.setVelocity(0, 0);
+    if (this.lives <= 0) {
+      this.gameOver();
+    }
+  }
+
+  gameOver() {
+    this.physics.pause();
+    this.popupOpen = true;
+    document.getElementById("modal-question").innerText =
+      "💀 Game Over! You lost all lives.";
+    const container = document.getElementById("modal-answers");
+    container.innerHTML = "";
+    const restartBtn = document.createElement("button");
+    restartBtn.innerText = "Restart";
+    restartBtn.className = "answer-btn";
+    restartBtn.onclick = () => {
+      document.getElementById("modal").style.display = "none";
+      this.popupOpen = false;
+      this.scene.restart();
+    };
+    container.appendChild(restartBtn);
+    document.getElementById("modal").style.display = "flex";
   }
 
   createFloor(x, y, width, height) {
@@ -85,15 +134,12 @@ class GameScene extends Phaser.Scene {
   }
   createPlatform(x, y, width, height) {
     let platform = this.platforms.create(x, y, "platforme");
-
     // Resize the body
     platform.displayWidth = width;
     platform.displayHeight = height;
     platform.setDisplaySize(width, height);
-
     platform.refreshBody(); // VERY IMPORTANT
     platform.setDepth(1);
-
     return platform;
   }
   createPlatformRelative(x, heightAboveFloor, width, height) {
@@ -101,10 +147,50 @@ class GameScene extends Phaser.Scene {
     return this.createPlatform(x, y, width, height);
   }
 
+  createEnemyRelative(x, heightAboveFloor) {
+    const y = this.floorY - heightAboveFloor;
+    const enemy = this.enemies.create(x, y, "enemy");
+    enemy.setScale(0.3).setDepth(3);
+    // Resize physics body manually
+    enemy.body.setSize(enemy.width * 0.4, enemy.height * 0.6);
+    enemy.setCollideWorldBounds(false); // IMPORTANT
+    enemy.setBounce(0);
+    enemy.body.setAllowGravity(false);
+    enemy.speed = 100;
+    enemy.direction = 1;
+    this.physics.add.collider(enemy, this.platforms);
+    // ---- Patrol range (enemy platform width = 500)
+    const patrolWidth = 500;
+    enemy.minX = x - patrolWidth / 2 + 30; // left edge limit
+    enemy.maxX = x + patrolWidth / 2 - 30; // right edge limit
+    return enemy;
+  }
+
+  handleEnemyCollision() {
+    if (this.popupOpen) return;
+    this.popupOpen = true;
+    this.physics.pause();
+    document.getElementById("modal-question").innerText =
+      "⚠️ You were caught by an enemy!";
+    const container = document.getElementById("modal-answers");
+    container.innerHTML = "";
+    const okBtn = document.createElement("button");
+    okBtn.innerText = "OK";
+    okBtn.className = "answer-btn";
+    okBtn.onclick = () => {
+      this.closeModal();
+      this.loseLife(); // same system as wrong answer
+    };
+    container.appendChild(okBtn);
+    document.getElementById("modal").style.display = "flex";
+  }
+
   addScope(x, y, questionId, locked) {
     let scope = this.items.create(x, y, "scope");
     scope.setScale(0.2);
     scope.refreshBody();
+    // resize physics body
+    scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
     scope.questionId = questionId;
     scope.locked = locked;
   }
@@ -112,6 +198,7 @@ class GameScene extends Phaser.Scene {
     let scope = this.items.create(x, y, "scopeloop");
     scope.setScale(0.2);
     scope.refreshBody();
+    scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
     scope.questionId = questionId;
     scope.locked = locked;
   }
@@ -120,6 +207,7 @@ class GameScene extends Phaser.Scene {
     let loupe = this.items.create(x, y, "loupe");
     loupe.setScale(0.2);
     loupe.refreshBody();
+    loupe.body.setSize(loupe.width * 0.05, loupe.height * 0.15);
     loupe.isLoupe = true;
   }
   addScopeRelative(x, heightAboveFloor, questionId, locked) {
@@ -144,19 +232,20 @@ class GameScene extends Phaser.Scene {
     if (item.isLoupe) {
       this.hasLoupe = true;
       item.destroy();
-      alert("🔍 Loupe collected! Now analyze the slide on the third platform.");
+      this.showInfoMessage(
+        "🔍 Loupe collected! Now analyze the slide on the third platform.",
+        true,
+      );
       return;
     }
-
     // Logic: Locked Item Prevention (Spam Fix)
     if (item.locked && !this.hasLoupe) {
       if (this.canShowWarning) {
         this.canShowWarning = false;
-        alert(
-          "This slide is too complex! You need the Loupe from the 4th platform first.",
+        this.showInfoMessage(
+          "This slide is too complex! You need the Loupe first.",
+          true,
         );
-
-        // Cooldown timer: Only allow the alert once every 3 seconds
         this.time.delayedCall(3000, () => {
           this.canShowWarning = true;
         });
@@ -173,16 +262,36 @@ class GameScene extends Phaser.Scene {
     }
   }
 
+  showInfoMessage(message, autoClose = true, delay = 1500) {
+    this.popupOpen = true;
+    this.physics.pause();
+    document.getElementById("modal-question").innerText = message;
+    const container = document.getElementById("modal-answers");
+    container.innerHTML = "";
+    // Optional OK button
+    const okBtn = document.createElement("button");
+    okBtn.innerText = "OK";
+    okBtn.className = "answer-btn";
+    okBtn.onclick = () => {
+      this.closeModal();
+    };
+    container.appendChild(okBtn);
+    document.getElementById("modal").style.display = "flex";
+    if (autoClose) {
+      this.time.delayedCall(delay, () => {
+        if (this.popupOpen) this.closeModal();
+      });
+    }
+  }
+
   openTumorMenu() {
     this.popupOpen = true;
     this.physics.pause();
     const cam = this.cameras.main;
-
     // Create centered UI container in SCREEN SPACE
     this.tumorUI = this.add
       .container(cam.width / 2, cam.height / 2)
       .setDepth(1000);
-
     const overlay = this.add
       .rectangle(
         -cam.width / 3,
@@ -193,7 +302,6 @@ class GameScene extends Phaser.Scene {
         0.85,
       )
       .setOrigin(0);
-
     // Tumor image
     const tumorImg = this.add
       .image(0, -50, "tumor")
@@ -206,7 +314,6 @@ class GameScene extends Phaser.Scene {
       tumorImg.x = dragX;
       tumorImg.y = dragY;
     });
-
     // Zoom
     this.input.on("wheel", (pointer, gameObjects, dx, dy) => {
       if (!this.tumorUI) return;
@@ -217,7 +324,6 @@ class GameScene extends Phaser.Scene {
       );
       tumorImg.setScale(newScale);
     });
-
     // Diagnose button
     const button = this.add
       .rectangle(0, 220, 200, 55, 0x1e90ff)
@@ -235,15 +341,13 @@ class GameScene extends Phaser.Scene {
     });
     this.tumorUI.add([overlay, tumorImg, button, text]);
   }
+
   closeTumorMenu() {
     if (!this.tumorUI) return;
-
     this.input.removeAllListeners("wheel");
     this.input.removeAllListeners("drag");
-
     this.tumorUI.destroy();
     this.tumorUI = null;
-
     this.physics.resume();
     this.popupOpen = false;
   }
@@ -251,7 +355,6 @@ class GameScene extends Phaser.Scene {
   openQCM(id) {
     this.popupOpen = true;
     this.physics.pause();
-
     const questions = {
       q1: {
         q: "What is a tumor?",
@@ -269,39 +372,36 @@ class GameScene extends Phaser.Scene {
         c: 1,
       },
     };
-
     const data = questions[id];
     document.getElementById("modal-question").innerText = data.q;
     const container = document.getElementById("modal-answers");
     container.innerHTML = "";
-
     data.a.forEach((ans, i) => {
       const b = document.createElement("button");
       b.innerText = ans;
       b.className = "answer-btn";
-
       b.onclick = () => {
         // Disable all buttons to prevent double clicking
         const buttons = container.querySelectorAll("button");
         buttons.forEach((btn) => (btn.style.pointerEvents = "none"));
-
         if (i === data.c) {
           b.style.background = "#dcfce7"; // Success Green
           b.style.borderColor = "#22c55e";
           b.style.color = "#15803d";
           b.innerText = "✅ Correct Analysis!";
-
           this.time.delayedCall(1000, () => {
             if (this.currentScope) this.currentScope.destroy();
             this.closeModal();
           });
         } else {
-          b.style.background = "#fee2e2"; // Error Red
+          b.style.background = "#fee2e2";
           b.style.borderColor = "#ef4444";
           b.style.color = "#b91c1c";
-          b.innerText = "❌ Incorrect. Re-examine.";
-
-          this.time.delayedCall(1200, () => this.closeModal());
+          b.innerText = "❌ Incorrect. You lost 1 life.";
+          this.time.delayedCall(1200, () => {
+            this.closeModal();
+            this.loseLife();
+          });
         }
       };
       container.appendChild(b);
@@ -336,6 +436,21 @@ class GameScene extends Phaser.Scene {
       else this.setPlayerState("idel");
       if (this.cursors.up.isDown) this.player.setVelocityY(-550);
     }
+
+    // Enemy movement
+    this.enemies.children.iterate((enemy) => {
+      if (!enemy) return;
+      enemy.setVelocityX(enemy.speed * enemy.direction);
+      // Flip sprite visually
+      enemy.setFlipX(enemy.direction < 0);
+      // Patrol logic
+      if (enemy.x >= enemy.maxX) {
+        enemy.direction = -1;
+      }
+      if (enemy.x <= enemy.minX) {
+        enemy.direction = 1;
+      }
+    });
   }
 
   setPlayerState(s) {
@@ -398,7 +513,6 @@ class GameScene extends Phaser.Scene {
     }
   `;
     document.head.appendChild(style);
-
     let m = document.createElement("div");
     m.id = "modal";
     m.innerHTML = `
@@ -414,15 +528,14 @@ const config = {
   type: Phaser.AUTO,
   width: window.innerWidth,
   height: window.innerHeight,
-  physics: { default: "arcade", arcade: { debug: false } },
+  physics: { default: "arcade", arcade: { debug: true } },
   scene: [LabScene, GameScene],
 };
 let game = null;
-
 function startGame() {
   if (!game) {
     game = new Phaser.Game(config);
   }
 }
 
-//chekpoint
+//checkpoint tt
