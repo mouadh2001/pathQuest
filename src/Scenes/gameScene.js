@@ -528,7 +528,7 @@ const config = {
   type: Phaser.AUTO,
   width: window.innerWidth,
   height: window.innerHeight,
-  physics: { default: "arcade", arcade: { debug: true } },
+  physics: { default: "arcade", arcade: { debug: false } },
   scene: [LabScene, GameScene],
 };
 let game = null;
