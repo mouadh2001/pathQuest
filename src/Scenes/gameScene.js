@@ -1,4 +1,14 @@
-class GameScene extends Phaser.Scene {
+import LabScene from "./labScene.js";
+import {
+  createFloor,
+  createPlatformRelative,
+} from "../gameObjects/platforms.js";
+import { EnemyManager } from "../gameObjects/enemies.js";
+import { ItemManager } from "../gameObjects/items.js";
+import { ModalUI } from "../gameObjects/modal.js";
+import { PlayerController } from "../gameObjects/player.js";
+
+export default class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: "GameScene" });
   }
@@ -18,9 +28,15 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    this.physics.world.gravity.y = 1100;
+    // shared globals
+    this.popupOpen = false;
+    this.hasLoupe = false;
+    this.canShowWarning = true;
+
+    this.physics.world.gravity.y = 1400;
     const worldWidth = 1400;
     const worldHeight = window.innerHeight;
+
     // 1. Background
     let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
     bg.setDepth(0);
@@ -29,498 +45,66 @@ class GameScene extends Phaser.Scene {
       this.cameras.main.height / bg.height,
     );
     bg.setScale(scale).setScrollFactor(0);
-    const bgBottom = bg.displayHeight;
-    const floorOffsetFromBottom = 310; // <-- adjust this once only
+    const floorOffsetFromBottom = 310;
     this.floorY = bg.displayHeight - floorOffsetFromBottom * scale;
+
     // 2. Platforms
     this.platforms = this.physics.add.staticGroup();
-    this.createFloor(worldWidth / 2, this.floorY, worldWidth, 40);
-    this.createPlatformRelative(400, 140, 200, 20); //1st q platform
-    this.createPlatformRelative(800, 160, 200, 20); //loupe q platform
-    this.createPlatformRelative(1200, 180, 200, 20); //2nd q platform
-    this.createPlatformRelative(1100, 400, 200, 20); //loupe platform
-    this.createPlatformRelative(150, 270, 200, 20); //passe to enemy platform
-    this.createPlatformRelative(600, 400, 500, 20); //enemy platform
+    createFloor(this, worldWidth / 2, this.floorY, worldWidth, 40);
+    createPlatformRelative(this, 400, 100, 150, 20); //1st q platform
+    createPlatformRelative(this, 800, 110, 150, 20); //2nd q platform
+    createPlatformRelative(this, 1200, 130, 150, 20); //loupe q platform
+    createPlatformRelative(this, 1100, 400, 150, 20); //loupe platform
+    createPlatformRelative(this, 150, 150, 150, 20); //pass to enemy platform
+    createPlatformRelative(this, 600, 400, 500, 20); //enemy platform
+
     // 3. Player
-    this.player = this.physics.add.image(100, 500, "idel");
-    this.player.setDepth(2);
-    this.player.setScale(0.5).setCollideWorldBounds(true);
-    this.player.body.setSize(60, 160);
-    this.physics.add.collider(this.player, this.platforms);
-    // Player spawn position
-    this.spawnX = 100;
-    this.spawnY = 500;
-    // Lives system
-    this.lives = 3;
-    // Display lives on screen
-    this.livesText = this.add
-      .text(20, 20, "Lives: 3", {
-        fontSize: "22px",
-        fill: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setScrollFactor(0)
-      .setDepth(2000);
+    this.playerController = new PlayerController(this);
+    this.playerController.create();
+
     // 4. Camera & World
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.playerState = "idel";
+
     // 5. Items & Flags
-    this.items = this.physics.add.staticGroup();
-    this.hasLoupe = false;
-    this.popupOpen = false;
-    this.canShowWarning = true; // Prevents alert spamming
-    // Setup Items
-    this.addScopeRelative(400, 180, "q1", false);
-    this.addScopeRelative(800, 200, "q2", false);
-    this.addScopeLoopRelative(1200, 220, "tumor_v", true);
-    this.addLoupeRelative(1100, 450);
-    // Enemy
+    this.itemManager = new ItemManager(this);
+    this.itemManager.addScopeRelative(400, 180, "q1", false);
+    this.itemManager.addScopeRelative(800, 200, "q2", false);
+    this.itemManager.addScopeLoopRelative(1200, 220, "tumor_v", true);
+    this.itemManager.addLoupeRelative(1100, 450);
+
+    // 6. Enemies
     this.enemies = this.physics.add.group();
-    this.createEnemyRelative(600, 430);
+    this.enemyManager = new EnemyManager(this);
+    this.enemyManager.createEnemyRelative(600, 430);
+
+    // overlaps
     this.physics.add.overlap(
       this.player,
-      this.items,
-      this.handleItemCollision,
+      this.itemManager.items,
+      this.itemManager.handleItemCollision,
       null,
-      this,
+      this.itemManager,
     );
     this.physics.add.overlap(
       this.player,
       this.enemies,
-      this.handleEnemyCollision,
+      this.enemyManager.handleCollision,
       null,
-      this,
+      this.enemyManager,
     );
-    this.createHTMLModal();
-  }
 
-  loseLife() {
-    this.lives--;
-    this.livesText.setText("Lives: " + this.lives);
-    // Reset player position
-    this.player.setPosition(this.spawnX, this.spawnY);
-    this.player.setVelocity(0, 0);
-    if (this.lives <= 0) {
-      this.gameOver();
-    }
-  }
-
-  gameOver() {
-    this.physics.pause();
-    this.popupOpen = true;
-    document.getElementById("modal-question").innerText =
-      "💀 Game Over! You lost all lives.";
-    const container = document.getElementById("modal-answers");
-    container.innerHTML = "";
-    const restartBtn = document.createElement("button");
-    restartBtn.innerText = "Restart";
-    restartBtn.className = "answer-btn";
-    restartBtn.onclick = () => {
-      document.getElementById("modal").style.display = "none";
-      this.popupOpen = false;
-      this.scene.restart();
-    };
-    container.appendChild(restartBtn);
-    document.getElementById("modal").style.display = "flex";
-  }
-
-  createFloor(x, y, width, height) {
-    const rect = this.add.rectangle(x, y, width, height, 0x000000, 0);
-    rect.setDepth(0);
-    this.platforms.add(rect);
-  }
-  createPlatform(x, y, width, height) {
-    let platform = this.platforms.create(x, y, "platforme");
-    // Resize the body
-    platform.displayWidth = width;
-    platform.displayHeight = height;
-    platform.setDisplaySize(width, height);
-    platform.refreshBody(); // VERY IMPORTANT
-    platform.setDepth(1);
-    return platform;
-  }
-  createPlatformRelative(x, heightAboveFloor, width, height) {
-    const y = this.floorY - heightAboveFloor;
-    return this.createPlatform(x, y, width, height);
-  }
-
-  createEnemyRelative(x, heightAboveFloor) {
-    const y = this.floorY - heightAboveFloor;
-    const enemy = this.enemies.create(x, y, "enemy");
-    enemy.setScale(0.3).setDepth(3);
-    // Resize physics body manually
-    enemy.body.setSize(enemy.width * 0.4, enemy.height * 0.6);
-    enemy.setCollideWorldBounds(false); // IMPORTANT
-    enemy.setBounce(0);
-    enemy.body.setAllowGravity(false);
-    enemy.speed = 100;
-    enemy.direction = 1;
-    this.physics.add.collider(enemy, this.platforms);
-    // ---- Patrol range (enemy platform width = 500)
-    const patrolWidth = 500;
-    enemy.minX = x - patrolWidth / 2 + 30; // left edge limit
-    enemy.maxX = x + patrolWidth / 2 - 30; // right edge limit
-    return enemy;
-  }
-
-  handleEnemyCollision() {
-    if (this.popupOpen) return;
-    this.popupOpen = true;
-    this.physics.pause();
-    document.getElementById("modal-question").innerText =
-      "⚠️ You were caught by an enemy!";
-    const container = document.getElementById("modal-answers");
-    container.innerHTML = "";
-    const okBtn = document.createElement("button");
-    okBtn.innerText = "OK";
-    okBtn.className = "answer-btn";
-    okBtn.onclick = () => {
-      this.closeModal();
-      this.loseLife(); // same system as wrong answer
-    };
-    container.appendChild(okBtn);
-    document.getElementById("modal").style.display = "flex";
-  }
-
-  addScope(x, y, questionId, locked) {
-    let scope = this.items.create(x, y, "scope");
-    scope.setScale(0.2);
-    scope.refreshBody();
-    // resize physics body
-    scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
-    scope.questionId = questionId;
-    scope.locked = locked;
-  }
-  addScopeLoop(x, y, questionId, locked) {
-    let scope = this.items.create(x, y, "scopeloop");
-    scope.setScale(0.2);
-    scope.refreshBody();
-    scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
-    scope.questionId = questionId;
-    scope.locked = locked;
-  }
-
-  addLoupe(x, y) {
-    let loupe = this.items.create(x, y, "loupe");
-    loupe.setScale(0.2);
-    loupe.refreshBody();
-    loupe.body.setSize(loupe.width * 0.05, loupe.height * 0.15);
-    loupe.isLoupe = true;
-  }
-  addScopeRelative(x, heightAboveFloor, questionId, locked) {
-    const y = this.floorY - heightAboveFloor;
-    return this.addScope(x, y, questionId, locked);
-  }
-
-  addScopeLoopRelative(x, heightAboveFloor, questionId, locked) {
-    const y = this.floorY - heightAboveFloor;
-    return this.addScopeLoop(x, y, questionId, locked);
-  }
-
-  addLoupeRelative(x, heightAboveFloor) {
-    const y = this.floorY - heightAboveFloor;
-    return this.addLoupe(x, y);
-  }
-
-  handleItemCollision(player, item) {
-    if (this.popupOpen) return;
-
-    // Logic: Pick up Loupe
-    if (item.isLoupe) {
-      this.hasLoupe = true;
-      item.destroy();
-      this.showInfoMessage(
-        "🔍 Loupe collected! Now analyze the slide on the third platform.",
-        true,
-      );
-      return;
-    }
-    // Logic: Locked Item Prevention (Spam Fix)
-    if (item.locked && !this.hasLoupe) {
-      if (this.canShowWarning) {
-        this.canShowWarning = false;
-        this.showInfoMessage(
-          "This slide is too complex! You need the Loupe first.",
-          true,
-        );
-        this.time.delayedCall(3000, () => {
-          this.canShowWarning = true;
-        });
-      }
-      return;
-    }
-
-    // Logic: Open Menus
-    this.currentScope = item;
-    if (item.questionId === "tumor_v") {
-      this.openTumorMenu();
-    } else {
-      this.openQCM(item.questionId);
-    }
-  }
-
-  showInfoMessage(message, autoClose = true, delay = 1500) {
-    this.popupOpen = true;
-    this.physics.pause();
-    document.getElementById("modal-question").innerText = message;
-    const container = document.getElementById("modal-answers");
-    container.innerHTML = "";
-    // Optional OK button
-    const okBtn = document.createElement("button");
-    okBtn.innerText = "OK";
-    okBtn.className = "answer-btn";
-    okBtn.onclick = () => {
-      this.closeModal();
-    };
-    container.appendChild(okBtn);
-    document.getElementById("modal").style.display = "flex";
-    if (autoClose) {
-      this.time.delayedCall(delay, () => {
-        if (this.popupOpen) this.closeModal();
-      });
-    }
-  }
-
-  openTumorMenu() {
-    this.popupOpen = true;
-    this.physics.pause();
-    const cam = this.cameras.main;
-    // Create centered UI container in SCREEN SPACE
-    this.tumorUI = this.add
-      .container(cam.width / 2, cam.height / 2)
-      .setDepth(1000);
-    const overlay = this.add
-      .rectangle(
-        -cam.width / 3,
-        -cam.height / 2,
-        cam.width,
-        cam.height,
-        0x000000,
-        0.85,
-      )
-      .setOrigin(0);
-    // Tumor image
-    const tumorImg = this.add
-      .image(0, -50, "tumor")
-      .setScale(0.5)
-      .setInteractive({ draggable: true });
-
-    // Enable drag
-    this.input.setDraggable(tumorImg);
-    tumorImg.on("drag", (pointer, dragX, dragY) => {
-      tumorImg.x = dragX;
-      tumorImg.y = dragY;
-    });
-    // Zoom
-    this.input.on("wheel", (pointer, gameObjects, dx, dy) => {
-      if (!this.tumorUI) return;
-      const newScale = Phaser.Math.Clamp(
-        tumorImg.scale + (dy > 0 ? -0.05 : 0.05),
-        0.3,
-        2.5,
-      );
-      tumorImg.setScale(newScale);
-    });
-    // Diagnose button
-    const button = this.add
-      .rectangle(0, 220, 200, 55, 0x1e90ff)
-      .setInteractive({ useHandCursor: true });
-    const text = this.add
-      .text(0, 220, "Diagnose", {
-        fontSize: "22px",
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    button.on("pointerdown", () => {
-      this.closeTumorMenu();
-      this.openQCM("q_tumor");
-    });
-    this.tumorUI.add([overlay, tumorImg, button, text]);
-  }
-
-  closeTumorMenu() {
-    if (!this.tumorUI) return;
-    this.input.removeAllListeners("wheel");
-    this.input.removeAllListeners("drag");
-    this.tumorUI.destroy();
-    this.tumorUI = null;
-    this.physics.resume();
-    this.popupOpen = false;
-  }
-
-  openQCM(id) {
-    this.popupOpen = true;
-    this.physics.pause();
-    const questions = {
-      q1: {
-        q: "What is a tumor?",
-        a: ["A virus", "Abnormal cell growth", "Healthy tissue"],
-        c: 1,
-      },
-      q2: {
-        q: "Benign tumors usually stay in one place?",
-        a: ["True", "False"],
-        c: 0,
-      },
-      q_tumor: {
-        q: "Based on the zoom, what characterizes these cells?",
-        a: ["Uniform shape", "Irregular borders and nuclei", "Normal size"],
-        c: 1,
-      },
-    };
-    const data = questions[id];
-    document.getElementById("modal-question").innerText = data.q;
-    const container = document.getElementById("modal-answers");
-    container.innerHTML = "";
-    data.a.forEach((ans, i) => {
-      const b = document.createElement("button");
-      b.innerText = ans;
-      b.className = "answer-btn";
-      b.onclick = () => {
-        // Disable all buttons to prevent double clicking
-        const buttons = container.querySelectorAll("button");
-        buttons.forEach((btn) => (btn.style.pointerEvents = "none"));
-        if (i === data.c) {
-          b.style.background = "#dcfce7"; // Success Green
-          b.style.borderColor = "#22c55e";
-          b.style.color = "#15803d";
-          b.innerText = "✅ Correct Analysis!";
-          this.time.delayedCall(1000, () => {
-            if (this.currentScope) this.currentScope.destroy();
-            this.closeModal();
-          });
-        } else {
-          b.style.background = "#fee2e2";
-          b.style.borderColor = "#ef4444";
-          b.style.color = "#b91c1c";
-          b.innerText = "❌ Incorrect. You lost 1 life.";
-          this.time.delayedCall(1200, () => {
-            this.closeModal();
-            this.loseLife();
-          });
-        }
-      };
-      container.appendChild(b);
-    });
-    document.getElementById("modal").style.display = "flex";
-  }
-
-  closeModal() {
-    document.getElementById("modal").style.display = "none";
-    this.physics.resume();
-    this.popupOpen = false;
+    // modal/UI helper
+    this.modal = new ModalUI(this);
+    this.modal.createHTMLModal();
   }
 
   update() {
     if (this.popupOpen) return;
-    const onGround =
-      this.player.body.touching.down || this.player.body.blocked.down;
-    let velocityX = 0;
-    if (this.cursors.left.isDown) {
-      velocityX = -250;
-      this.player.setFlipX(true);
-    } else if (this.cursors.right.isDown) {
-      velocityX = 250;
-      this.player.setFlipX(false);
-    }
-    this.player.setVelocityX(velocityX);
-
-    if (!onGround) {
-      this.setPlayerState(this.player.body.velocity.y < 0 ? "jump" : "jumpOut");
-    } else {
-      if (velocityX !== 0) this.setPlayerState("walk");
-      else this.setPlayerState("idel");
-      if (this.cursors.up.isDown) this.player.setVelocityY(-550);
-    }
-
-    // Enemy movement
-    this.enemies.children.iterate((enemy) => {
-      if (!enemy) return;
-      enemy.setVelocityX(enemy.speed * enemy.direction);
-      // Flip sprite visually
-      enemy.setFlipX(enemy.direction < 0);
-      // Patrol logic
-      if (enemy.x >= enemy.maxX) {
-        enemy.direction = -1;
-      }
-      if (enemy.x <= enemy.minX) {
-        enemy.direction = 1;
-      }
-    });
-  }
-
-  setPlayerState(s) {
-    if (this.playerState === s) return;
-    this.playerState = s;
-    this.player.setTexture(s);
-  }
-
-  createHTMLModal() {
-    if (document.getElementById("modal")) return;
-
-    // Create Style Tag for Professional UI
-    const style = document.createElement("style");
-    style.innerHTML = `
-    #modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.85); /* Dark slate overlay */
-      display: none; justify-content: center; align-items: center;
-      z-index: 9999; backdrop-filter: blur(5px); transition: all 0.3s ease;
-    }
-    .modal-content {
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 16px;
-      text-align: center;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      max-width: 450px;
-      width: 90%;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-      border-top: 6px solid #3b82f6; /* Professional blue accent */
-    }
-    #modal-question {
-      color: #1e293b;
-      font-size: 22px;
-      margin-bottom: 25px;
-      line-height: 1.4;
-    }
-    .answer-btn {
-      display: block;
-      width: 100%;
-      margin: 12px 0;
-      padding: 14px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      background: #f8fafc;
-      color: #334155;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-    }
-    .answer-btn:hover {
-      background: #eff6ff;
-      border-color: #3b82f6;
-      color: #1d4ed8;
-      transform: translateY(-2px);
-    }
-    .answer-btn:active {
-      transform: translateY(0);
-    }
-  `;
-    document.head.appendChild(style);
-    let m = document.createElement("div");
-    m.id = "modal";
-    m.innerHTML = `
-    <div class="modal-content">
-      <h2 id="modal-question"></h2>
-      <div id="modal-answers"></div>
-    </div>`;
-    document.body.appendChild(m);
+    this.playerController.update(this.cursors);
+    this.enemyManager.update();
   }
 }
 
@@ -532,7 +116,7 @@ const config = {
   scene: [LabScene, GameScene],
 };
 let game = null;
-function startGame() {
+export function startGame() {
   if (!game) {
     game = new Phaser.Game(config);
   }

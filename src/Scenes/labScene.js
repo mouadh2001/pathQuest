@@ -1,4 +1,4 @@
-class LabScene extends Phaser.Scene {
+export default class LabScene extends Phaser.Scene {
   constructor() {
     super({ key: "LabScene" });
   }
@@ -45,38 +45,36 @@ class LabScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-this.scale.on("resize", this.resize, this);
-this.resize({ width: this.scale.width, height: this.scale.height });
+    this.scale.on("resize", this.resize, this);
+    this.resize({ width: this.scale.width, height: this.scale.height });
   }
 
-resize(gameSize) {
-  if (!this.bg) return;
+  resize(gameSize) {
+    if (!this.bg) return;
 
-  const width = this.scale.width;
-  const height = this.scale.height;
+    const width = this.scale.width;
+    const height = this.scale.height;
 
-  // Center background
-  this.bg.setPosition(width / 2, height / 2);
+    // Center background
+    this.bg.setPosition(width / 2, height / 2);
 
-  // Scale background to fit screen
-  const scale = Math.min(width / this.bg.width, height / this.bg.height);
-  this.bg.setScale(scale);
+    // Scale background to fit screen
+    const scale = Math.min(width / this.bg.width, height / this.bg.height);
+    this.bg.setScale(scale);
 
-  // --- RELATIVE POSITION ON IMAGE ---
+    // --- RELATIVE POSITION ON IMAGE ---
 
-  // Original image coordinates where hotspot should be
-  const originalX = 260;
-  const originalY = 695;
+    // Original image coordinates where hotspot should be
+    const originalX = 260;
+    const originalY = 695;
 
-  // Convert image-space → screen-space
-  const x = this.bg.x + (originalX - this.bg.width / 2) * scale;
-  const y = this.bg.y + (originalY - this.bg.height / 2) * scale;
+    // Convert image-space → screen-space
+    const x = this.bg.x + (originalX - this.bg.width / 2) * scale;
+    const y = this.bg.y + (originalY - this.bg.height / 2) * scale;
 
-  // Move UI elements
-  this.hotspot.setPosition(x, y).setScale(scale);
-  this.circle.setPosition(x, y).setScale(scale);
-  this.lvlText
-    .setPosition(x, y - 120 * scale)
-    .setScale(scale);
-}
+    // Move UI elements
+    this.hotspot.setPosition(x, y).setScale(scale);
+    this.circle.setPosition(x, y).setScale(scale);
+    this.lvlText.setPosition(x, y - 120 * scale).setScale(scale);
+  }
 }

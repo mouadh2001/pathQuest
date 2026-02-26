@@ -37,12 +37,9 @@
     <!-- GAME CONTAINER -->
     <div id="game-container" style="display: none"></div>
 
-    <!-- Phaser -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <!-- Auth -->
     <script type="module" src="./auth.js"></script>
-    <!-- Scenes -->
-    <script src="../src/Scenes/labScene.js"></script>
-    <script src="../src/Scenes/gameScene.js"></script>
+    <!-- Scenes (modules are imported by auth.js) -->
+    <!-- auth.js imports GameScene which in turn loads LabScene -->
   </body>
 </html>

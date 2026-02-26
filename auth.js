@@ -12,6 +12,11 @@ const gameContainer = document.getElementById("game-container");
 const errorMessage = document.getElementById("error-message");
 
 // ===============================
+// IMPORTS
+// ===============================
+import { startGame } from "./src/Scenes/gameScene.js";
+
+// ===============================
 // CHECK TOKEN ON LOAD
 // ===============================
 window.addEventListener("load", () => {
