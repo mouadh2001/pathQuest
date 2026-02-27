@@ -27,12 +27,13 @@ export class PlayerController {
       .setScrollFactor(0)
       .setDepth(2000);
   }
-
+  respawn() {
+    this.scene.player.setPosition(this.spawnX, this.spawnY);
+    this.scene.player.setVelocity(0, 0);
+  }
   loseLife() {
     this.lives--;
     this.scene.livesText.setText("Lives: " + this.lives);
-    this.scene.player.setPosition(this.spawnX, this.spawnY);
-    this.scene.player.setVelocity(0, 0);
     if (this.lives <= 0) {
       this.gameOver();
     }

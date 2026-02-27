@@ -184,11 +184,10 @@ export class ModalUI {
           b.style.background = "#fee2e2";
           b.style.borderColor = "#ef4444";
           b.style.color = "#b91c1c";
-          b.innerText = "❌ Incorrect. You lost 1 life.";
+          b.innerText = "❌ Incorrect.";
           this.scene.time.delayedCall(1200, () => {
             this.scene.currentScope.destroy();
             this.closeModal();
-            this.scene.playerController.loseLife();
           });
         }
       };

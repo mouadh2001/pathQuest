@@ -4,7 +4,7 @@ export class EnemyManager {
     this.scene = scene;
   }
 
-  createEnemyRelative(x, heightAboveFloor,range,speed) {
+  createEnemyRelative(x, heightAboveFloor, range, speed) {
     const { scene } = this;
     const y = scene.floorY - heightAboveFloor;
     const enemy = scene.enemies.create(x, y, "enemy");
@@ -54,7 +54,8 @@ export class EnemyManager {
     okBtn.className = "answer-btn";
     okBtn.onclick = () => {
       this.scene.modal.closeModal();
-      this.scene.playerController.loseLife(); // same system as wrong answer
+      this.scene.playerController.loseLife();
+      this.scene.playerController.respawn(); // same system as wrong answer
     };
     container.appendChild(okBtn);
     document.getElementById("modal").style.display = "flex";
