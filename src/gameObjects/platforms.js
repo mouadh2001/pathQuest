@@ -5,7 +5,7 @@ export function createFloor(scene, x, y, width, height) {
   scene.platforms.add(rect);
 }
 
-export function createPlatform(scene, x, y, width, height) {
+export function createPlatform(scene, x, y, width, height, id) {
   let platform = scene.platforms.create(x, y, "platforme");
   // Resize the body
   platform.displayWidth = width;
@@ -13,6 +13,7 @@ export function createPlatform(scene, x, y, width, height) {
   platform.setDisplaySize(width, height);
   platform.refreshBody(); // VERY IMPORTANT
   platform.setDepth(1);
+  platform.id = id;
   return platform;
 }
 
@@ -22,7 +23,8 @@ export function createPlatformRelative(
   heightAboveFloor,
   width,
   height,
+  id
 ) {
   const y = scene.floorY - heightAboveFloor;
-  return createPlatform(scene, x, y, width, height);
+  return createPlatform(scene, x, y, width, height, id);
 }

@@ -24,7 +24,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("tumor", "../assets/tumeur.jpg");
     this.load.image("scopeloop", "../assets/scopeloupe.png");
     this.load.image("platforme", "../assets/platforme.png");
-    this.load.image("enemy", "../assets/enemy.png");
+    this.load.image("enemy", "../assets/enemy1.png");
   }
 
   create() {
@@ -33,8 +33,8 @@ export default class GameScene extends Phaser.Scene {
     this.hasLoupe = false;
     this.canShowWarning = true;
 
-    this.physics.world.gravity.y = 1400;
-    const worldWidth = 1400;
+    this.physics.world.gravity.y = 1300;
+    const worldWidth = 1320;
     const worldHeight = window.innerHeight;
 
     // 1. Background
@@ -51,12 +51,16 @@ export default class GameScene extends Phaser.Scene {
     // 2. Platforms
     this.platforms = this.physics.add.staticGroup();
     createFloor(this, worldWidth / 2, this.floorY, worldWidth, 40);
-    createPlatformRelative(this, 400, 100, 150, 20); //1st q platform
-    createPlatformRelative(this, 800, 110, 150, 20); //2nd q platform
-    createPlatformRelative(this, 1200, 130, 150, 20); //loupe q platform
-    createPlatformRelative(this, 1100, 400, 150, 20); //loupe platform
-    createPlatformRelative(this, 150, 150, 150, 20); //pass to enemy platform
-    createPlatformRelative(this, 600, 400, 500, 20); //enemy platform
+    createPlatformRelative(this, 400, 100, 150, 20, "q1"); //1st q platform
+    createPlatformRelative(this, 700, 130, 150, 20, "q2"); //2nd q platform
+    createPlatformRelative(this, 1200, 130, 150, 20, "q3"); //loupe q platform
+    createPlatformRelative(this, 950, 300, 150, 20, "loupe"); //loupe platform
+    createPlatformRelative(this, 150, 130, 150, 20, "pass"); //pass to enemy platform
+    createPlatformRelative(this, 530, 300, 400, 20, "enemy"); //enemy platform
+    createPlatformRelative(this, 200, 410, 400, 20, "q4"); //q4 enemy platform
+    createPlatformRelative(this, 800, 410, 150, 20, "q5"); //q5 platform
+    createPlatformRelative(this, 950, 410, 150, 20, "void"); //void platform
+    createPlatformRelative(this, 1175, 410, 300, 20, "q7"); //q7 platform
 
     // 3. Player
     this.playerController = new PlayerController(this);
@@ -70,15 +74,25 @@ export default class GameScene extends Phaser.Scene {
 
     // 5. Items & Flags
     this.itemManager = new ItemManager(this);
-    this.itemManager.addScopeRelative(400, 180, "q1", false);
-    this.itemManager.addScopeRelative(800, 200, "q2", false);
-    this.itemManager.addScopeLoopRelative(1200, 220, "tumor_v", true);
-    this.itemManager.addLoupeRelative(1100, 450);
+    this.itemManager.addScopeRelative(400, 140, "q1", false);
+    this.itemManager.addScopeRelative(700, 170, "q2", false);
+    this.itemManager.addScopeRelative(550, 50, "q3", false);
+    this.itemManager.addScopeRelative(100, 450, "q4", false);
+    this.itemManager.addScopeRelative(1250, 450, "q5", false);
+    this.itemManager.addScopeRelative(800, 450, "q6", false);
+    this.itemManager.addScopeLoopRelative(1200, 170, "tumor_v", true);
+    this.itemManager.addLoupeRelative(950, 340);
 
     // 6. Enemies
     this.enemies = this.physics.add.group();
     this.enemyManager = new EnemyManager(this);
-    this.enemyManager.createEnemyRelative(600, 430);
+    this.enemyManager.createEnemyRelative(530, 330, 400, 100);
+    this.enemyManager2 = new EnemyManager(this);
+    this.enemyManager2.createEnemyRelative(530, 40, 800, 120);
+    this.enemyManager3 = new EnemyManager(this);
+    this.enemyManager3.createEnemyRelative(210, 440, 400, 120);
+    this.enemyManager4 = new EnemyManager(this);
+    this.enemyManager4.createEnemyRelative(1020, 440, 550, 120);
 
     // overlaps
     this.physics.add.overlap(

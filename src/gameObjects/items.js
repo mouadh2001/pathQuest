@@ -8,6 +8,7 @@ export class ItemManager {
   addScope(x, y, questionId, locked) {
     let scope = this.items.create(x, y, "scope");
     scope.setScale(0.2);
+    scope.setDepth(2);
     scope.refreshBody();
     // resize physics body
     scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
@@ -19,6 +20,7 @@ export class ItemManager {
   addScopeLoop(x, y, questionId, locked) {
     let scope = this.items.create(x, y, "scopeloop");
     scope.setScale(0.2);
+    scope.setDepth(2);
     scope.refreshBody();
     scope.body.setSize(scope.width * 0.05, scope.height * 0.15);
     scope.questionId = questionId;
@@ -29,6 +31,7 @@ export class ItemManager {
   addLoupe(x, y) {
     let loupe = this.items.create(x, y, "loupe");
     loupe.setScale(0.2);
+    loupe.setDepth(2);
     loupe.refreshBody();
     loupe.body.setSize(loupe.width * 0.05, loupe.height * 0.15);
     loupe.isLoupe = true;

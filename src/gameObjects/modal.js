@@ -95,7 +95,7 @@ export class ModalUI {
     this.scene.popupOpen = false;
   }
 
-  openQCM(id) {
+  openQCM(id, count) {
     this.scene.popupOpen = true;
     this.scene.physics.pause();
     const questions = {
@@ -108,6 +108,34 @@ export class ModalUI {
         q: "Benign tumors usually stay in one place?",
         a: ["True", "False"],
         c: 0,
+      },
+      q3: {
+        q: "Which of these is a common symptom of a tumor?",
+        a: ["Unexplained weight loss", "Improved vision", "Increased energy"],
+        c: 0,
+      },
+      q4: {
+        q: "What is metastasis?",
+        a: [
+          "Spread of cancer to other parts of the body",
+          "A type of benign tumor",
+          "A treatment method",
+        ],
+        c: 0,
+      },
+      q5: {
+        q: "What is the main function of a tumor suppressor gene?",
+        a: [
+          "To promote cell division",
+          "To prevent uncontrolled cell growth",
+          "To produce energy for cells",
+        ],
+        c: 1,
+      },
+      q6: {
+        q: "Which of these is NOT a type of tumor?",
+        a: ["Benign", "Malignant", "Healthy"],
+        c: 2,
       },
       q_tumor: {
         q: "Based on the zoom, what characterizes these cells?",
@@ -135,6 +163,22 @@ export class ModalUI {
           this.scene.time.delayedCall(1000, () => {
             if (this.scene.currentScope) this.scene.currentScope.destroy();
             this.closeModal();
+            const passPlatform = this.scene.platforms
+              .getChildren()
+              .find((p) => p.id === "pass");
+            if (passPlatform && passPlatform.y !== this.scene.floorY - 190) {
+              passPlatform.y -= 20; // Move it up by 150 pixels
+              console.log(passPlatform.y);
+              passPlatform.refreshBody();
+            }
+            if (id === "q5") {
+              const voidPlatform = this.scene.platforms
+                .getChildren()
+                .find((p) => p.id === "void");
+              if (voidPlatform) {
+                voidPlatform.destroy();
+              }
+            }
           });
         } else {
           b.style.background = "#fee2e2";
@@ -142,6 +186,7 @@ export class ModalUI {
           b.style.color = "#b91c1c";
           b.innerText = "❌ Incorrect. You lost 1 life.";
           this.scene.time.delayedCall(1200, () => {
+            this.scene.currentScope.destroy();
             this.closeModal();
             this.scene.playerController.loseLife();
           });

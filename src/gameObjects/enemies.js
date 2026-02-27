@@ -4,21 +4,21 @@ export class EnemyManager {
     this.scene = scene;
   }
 
-  createEnemyRelative(x, heightAboveFloor) {
+  createEnemyRelative(x, heightAboveFloor,range,speed) {
     const { scene } = this;
     const y = scene.floorY - heightAboveFloor;
     const enemy = scene.enemies.create(x, y, "enemy");
     enemy.setScale(0.3).setDepth(3);
     // Resize physics body manually
-    enemy.body.setSize(enemy.width * 0.4, enemy.height * 0.6);
+    enemy.body.setSize(enemy.width * 0.3, enemy.height * 0.3);
     enemy.setCollideWorldBounds(false); // IMPORTANT
     enemy.setBounce(0);
     enemy.body.setAllowGravity(false);
-    enemy.speed = 100;
+    enemy.speed = speed;
     enemy.direction = 1;
     scene.physics.add.collider(enemy, scene.platforms);
     // ---- Patrol range (enemy platform width = 500)
-    const patrolWidth = 500;
+    const patrolWidth = range;
     enemy.minX = x - patrolWidth / 2 + 30; // left edge limit
     enemy.maxX = x + patrolWidth / 2 - 30; // right edge limit
     return enemy;
