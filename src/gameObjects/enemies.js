@@ -45,6 +45,7 @@ export class EnemyManager {
     if (this.scene.popupOpen) return;
     this.scene.popupOpen = true;
     this.scene.physics.pause();
+    document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
     document.getElementById("modal-question").innerText =
       "⚠️ You were caught by an enemy!";
     const container = document.getElementById("modal-answers");

@@ -1,0 +1,70 @@
+#modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.85); /* Dark slate overlay */
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+.modal-content {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  max-width: 450px;
+  width: 90%;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.2),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  border-top: 6px solid #3b82f6; /* Professional blue accent */
+}
+#modal-question {
+  color: #1e293b;
+  font-size: 22px;
+  margin-bottom: 25px;
+  line-height: 1.4;
+}
+.answer-btn {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 14px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #334155;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.answer-btn:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  transform: translateY(-2px);
+}
+.answer-btn:active {
+  transform: translateY(0);
+}
+#modal-feedback {
+  margin-top: 15px;
+  padding: 10px;
+  font-weight: bold;
+  text-align: center;
+  min-height: 1.5em; /* Prevents the modal from jumping when text appears */
+}
+#modal-message {
+  margin-top: 15px;
+  padding: 10px;
+  font-weight: bold;
+  text-align: center;
+  min-height: 1.5em; /* Prevents the modal from jumping when text appears */
+}

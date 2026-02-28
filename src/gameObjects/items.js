@@ -60,6 +60,7 @@ export class ItemManager {
     if (item.isLoupe) {
       this.scene.hasLoupe = true;
       item.destroy();
+      document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
       this.scene.modal.showInfoMessage(
         "🔍 Loupe collected! Now analyze the slide on the third platform.",
         true,
@@ -70,6 +71,8 @@ export class ItemManager {
     if (item.locked && !this.scene.hasLoupe) {
       if (this.scene.canShowWarning) {
         this.scene.canShowWarning = false;
+        document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
+
         this.scene.modal.showInfoMessage(
           "This slide is too complex! You need the Loupe first.",
           true,

@@ -14,6 +14,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   preload() {
+    // Load images
     this.load.image("bg", "../assets/background.png");
     this.load.image("idel", "../assets/idel1.png");
     this.load.image("walk", "../assets/walk1.png");
@@ -25,9 +26,17 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("scopeloop", "../assets/scopeloupe.png");
     this.load.image("platforme", "../assets/platforme.png");
     this.load.image("enemy", "../assets/enemy1.png");
+    // Load audio
+    this.load.audio("bgMusic", "../sounds/background.mp3");
   }
 
   create() {
+    // Stop any existing music
+    const htmlMusic = document.getElementById("htmlMusic");
+    if (htmlMusic) {
+      htmlMusic.pause();
+      htmlMusic.currentTime = 0;
+    }
     // shared globals
     this.popupOpen = false;
     this.hasLoupe = false;
@@ -75,11 +84,11 @@ export default class GameScene extends Phaser.Scene {
     // 5. Items & Flags
     this.itemManager = new ItemManager(this);
     this.itemManager.addScopeRelative(400, 140, "q1", false);
-    this.itemManager.addScopeRelative(700, 170, "q2", false);
-    this.itemManager.addScopeRelative(550, 50, "q3", false);
+    this.itemManager.addScopeRelative(550, 50, "q2", false);
+    this.itemManager.addScopeRelative(700, 170, "q3", false);
     this.itemManager.addScopeRelative(100, 450, "q4", false);
-    this.itemManager.addScopeRelative(1250, 450, "q5", false);
-    this.itemManager.addScopeRelative(800, 450, "q6", false);
+    this.itemManager.addScopeRelative(1250, 450, "q6", false);
+    this.itemManager.addScopeRelative(800, 450, "q5", false);
     this.itemManager.addScopeLoopRelative(1200, 170, "tumor_v", true);
     this.itemManager.addLoupeRelative(950, 340);
 
@@ -88,11 +97,11 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager = new EnemyManager(this);
     this.enemyManager.createEnemyRelative(530, 330, 400, 100);
     this.enemyManager2 = new EnemyManager(this);
-    this.enemyManager2.createEnemyRelative(530, 40, 800, 120);
+    this.enemyManager2.createEnemyRelative(650, 40, 1000, 100);
     this.enemyManager3 = new EnemyManager(this);
-    this.enemyManager3.createEnemyRelative(210, 440, 400, 120);
+    this.enemyManager3.createEnemyRelative(210, 440, 400, 100);
     this.enemyManager4 = new EnemyManager(this);
-    this.enemyManager4.createEnemyRelative(1020, 440, 550, 120);
+    this.enemyManager4.createEnemyRelative(1020, 440, 550, 100);
 
     // overlaps
     this.physics.add.overlap(
@@ -113,6 +122,10 @@ export default class GameScene extends Phaser.Scene {
     // modal/UI helper
     this.modal = new ModalUI(this);
     this.modal.createHTMLModal();
+
+    // 7. Audio
+    this.bgMusic = this.sound.add("bgMusic", { loop: true, volume: 0.5 });
+    this.bgMusic.play();
   }
 
   update() {

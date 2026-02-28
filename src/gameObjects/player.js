@@ -43,6 +43,7 @@ export class PlayerController {
     const scene = this.scene;
     scene.physics.pause();
     scene.popupOpen = true;
+    document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
     document.getElementById("modal-question").innerText =
       "💀 Game Over! You lost all lives.";
     const container = document.getElementById("modal-answers");

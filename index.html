@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <title>Phaser Character (No Sprite Sheet)</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="login.css" />
+    <link rel="stylesheet" href="qcm.css" />
+    <audio id="htmlMusic" loop>
+      <source src="sounds/login.mp3" type="audio/mpeg" />
+    </audio>
   </head>
   <body align="center">
     <!-- LOGIN CONTAINER -->
@@ -37,6 +41,18 @@
     <!-- GAME CONTAINER -->
     <div id="game-container" style="display: none"></div>
 
+    <script>
+      const music = document.getElementById("htmlMusic");
+
+      // browser autoplay restriction
+      document.addEventListener(
+        "click",
+        () => {
+          music.play();
+        },
+        { once: true },
+      );
+    </script>
     <!-- Auth -->
     <script type="module" src="./auth.js"></script>
     <!-- Scenes (modules are imported by auth.js) -->
