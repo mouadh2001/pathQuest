@@ -27,7 +27,15 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("platforme", "../assets/platforme.png");
     this.load.image("enemy", "../assets/enemy1.png");
     // Load audio
-    this.load.audio("bgMusic", "../sounds/background.mp3");
+    this.load.audio("bgMusic", "../sounds/background.wav");
+    this.load.audio("jumpSfx", "../sounds/jumpin.wav");
+    this.load.audio("landSfx", "../sounds/runing.wav");
+    this.load.audio("runSfx", "../sounds/runing.wav");
+    this.load.audio("deathSfx", "../sounds/death.wav");
+    this.load.audio("correctSfx", "../sounds/correct.wav");
+    this.load.audio("wrongSfx", "../sounds/wrong.wav");
+    this.load.audio("scopeSfx", "../sounds/scope.wav");
+    this.load.audio("loupeSfx", "../sounds/loupe.mp3");
   }
 
   create() {
@@ -41,10 +49,22 @@ export default class GameScene extends Phaser.Scene {
     this.popupOpen = false;
     this.hasLoupe = false;
     this.canShowWarning = true;
+    this.correctcount = 0;
 
     this.physics.world.gravity.y = 1300;
     const worldWidth = 1320;
     const worldHeight = window.innerHeight;
+
+    //progressbar
+    this.progressBar = this.add.rectangle(
+      150,
+      30,
+      this.correctcount,
+      20,
+      0x00ff00,
+    );
+    this.progressBar.setOrigin(0, 0.5);
+    this.progressBar.setDepth(2000);
 
     // 1. Background
     let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
@@ -124,7 +144,7 @@ export default class GameScene extends Phaser.Scene {
     this.modal.createHTMLModal();
 
     // 7. Audio
-    this.bgMusic = this.sound.add("bgMusic", { loop: true, volume: 0.5 });
+    this.bgMusic = this.sound.add("bgMusic", { loop: true, volume: 0.3 });
     this.bgMusic.play();
   }
 

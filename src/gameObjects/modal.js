@@ -92,7 +92,10 @@ export class ModalUI {
   openQCM(id) {
     this.scene.popupOpen = true;
     this.scene.physics.pause();
-
+    this.sfx = {
+      correct: this.scene.sound.add("correctSfx", { volume: 0.5 }),
+      wrong: this.scene.sound.add("wrongSfx", { volume: 0.5 }),
+    };
     const questions = {
       // ... (your existing questions object)
       q1: {
@@ -156,7 +159,6 @@ export class ModalUI {
         c: 1,
       },
     };
-
     const data = questions[id];
     const modal = document.getElementById("modal");
     const questionText = document.getElementById("modal-question");
@@ -179,9 +181,11 @@ export class ModalUI {
         // Disable all buttons immediately so they can't click twice
         const buttons = container.querySelectorAll("button");
         buttons.forEach((btn) => (btn.style.pointerEvents = "none"));
-
         if (i === data.c) {
           // ✅ CORRECT LOGIC
+          this.sfx.correct.play();
+          this.scene.correctcount += 20; // Increment score
+          this.scene.progressBar.width = this.scene.correctcount; // Update progress bar visually
           b.classList.add("correct-choice"); // Use CSS classes for cleaner code
           b.style.background = "#dcfce7";
           b.style.color = "#15803d";
@@ -196,6 +200,7 @@ export class ModalUI {
           });
         } else {
           // ❌ WRONG LOGIC
+          this.sfx.wrong.play();
           b.style.background = "#fee2e2";
           b.style.color = "#b91c1c";
 
@@ -244,7 +249,6 @@ export class ModalUI {
 
   createHTMLModal() {
     if (document.getElementById("modal")) return;
-
     const modal = document.createElement("div");
     modal.id = "modal";
     modal.innerHTML = `

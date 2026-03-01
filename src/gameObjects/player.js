@@ -6,6 +6,9 @@ export class PlayerController {
     this.spawnY = 500;
     this.lives = 3;
     this.playerState = "idel";
+
+    // Track air state for landing sound
+    this.wasInAir = false;
   }
 
   create() {
@@ -26,6 +29,12 @@ export class PlayerController {
       })
       .setScrollFactor(0)
       .setDepth(2000);
+    // Initialize sound objects (allows for looping control)
+    this.sfx = {
+      jump: scene.sound.add("jumpSfx", { volume: 0.4 }),
+      land: scene.sound.add("landSfx", { volume: 0.3 }),
+      run: scene.sound.add("runSfx", { volume: 0.2, loop: true }),
+    };
   }
   respawn() {
     this.scene.player.setPosition(this.spawnX, this.spawnY);
@@ -67,28 +76,59 @@ export class PlayerController {
   }
 
   update(cursors) {
-    if (this.scene.popupOpen) return;
-    const onGround =
-      this.scene.player.body.touching.down ||
-      this.scene.player.body.blocked.down;
+    if (this.scene.popupOpen) {
+      if (this.sfx.run.isPlaying) this.sfx.run.stop();
+      return;
+    }
+
+    const player = this.scene.player;
+    const onGround = player.body.touching.down || player.body.blocked.down;
     let velocityX = 0;
+
+    // 1. Movement Logic
     if (cursors.left.isDown) {
       velocityX = -250;
-      this.scene.player.setFlipX(true);
+      player.setFlipX(true);
     } else if (cursors.right.isDown) {
       velocityX = 250;
-      this.scene.player.setFlipX(false);
+      player.setFlipX(false);
     }
-    this.scene.player.setVelocityX(velocityX);
+    player.setVelocityX(velocityX);
 
+    // 2. Sound & Animation Logic
     if (!onGround) {
-      this.setPlayerState(
-        this.scene.player.body.velocity.y < 0 ? "jump" : "jumpOut",
-      );
+      // In the air
+      this.setPlayerState(player.body.velocity.y < 0 ? "jump" : "jumpOut");
+      this.wasInAir = true; // Mark that we are airborne
+
+      // Stop running sound if we jump/fall
+      if (this.sfx.run.isPlaying) this.sfx.run.stop();
     } else {
-      if (velocityX !== 0) this.setPlayerState("walk");
-      else this.setPlayerState("idel");
-      if (cursors.up.isDown) this.scene.player.setVelocityY(-550);
+      // On the ground
+
+      // Check for LANDING
+      if (this.wasInAir) {
+        this.sfx.land.play();
+        this.wasInAir = false;
+      }
+
+      if (velocityX !== 0) {
+        this.setPlayerState("walk");
+        // Start running sound if not already playing
+        if (!this.sfx.run.isPlaying) this.sfx.run.play();
+      } else {
+        this.setPlayerState("idel");
+        // Stop running sound if standing still
+        if (this.sfx.run.isPlaying) this.sfx.run.stop();
+      }
+
+      // Check for JUMPING
+      if (cursors.up.isDown) {
+        player.setVelocityY(-550);
+        this.sfx.jump.play();
+        // Stop running sound immediately when jumping
+        if (this.sfx.run.isPlaying) this.sfx.run.stop();
+      }
     }
   }
 }

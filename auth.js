@@ -66,7 +66,9 @@ function showGame() {
   gameContainer.style.display = "block";
 
   // Start Phaser
-  startGame();
+  setTimeout(() => {
+    startGame();
+  }, 50);
 }
 
 // ===============================

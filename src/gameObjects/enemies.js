@@ -41,23 +41,39 @@ export class EnemyManager {
   }
 
   handleCollision(player, enemy) {
-    // this method is intended to be used as a physics overlap callback
+    // 1. Check if the popup is already open to prevent double-triggering
     if (this.scene.popupOpen) return;
+    // Inside handleCollision
+    if (this.scene.playerController.sfx.run.isPlaying) {
+      this.scene.playerController.sfx.run.stop();
+    }
+    // 2. Play the death sound immediately
+    this.scene.sound.play("deathSfx", { volume: 0.6 });
+
+    // 3. Pause the game and show the UI
     this.scene.popupOpen = true;
     this.scene.physics.pause();
-    document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
+
+    // Clear feedback and set message
+    document.getElementById("modal-feedback").innerText = "";
     document.getElementById("modal-question").innerText =
       "⚠️ You were caught by an enemy!";
+
     const container = document.getElementById("modal-answers");
     container.innerHTML = "";
+
     const okBtn = document.createElement("button");
     okBtn.innerText = "OK";
     okBtn.className = "answer-btn";
     okBtn.onclick = () => {
       this.scene.modal.closeModal();
       this.scene.playerController.loseLife();
-      this.scene.playerController.respawn(); // same system as wrong answer
+      this.scene.playerController.respawn();
+
+      // Resume physics when the user clicks OK
+      this.scene.physics.resume();
     };
+
     container.appendChild(okBtn);
     document.getElementById("modal").style.display = "flex";
   }

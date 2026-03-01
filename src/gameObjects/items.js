@@ -55,9 +55,16 @@ export class ItemManager {
 
   handleItemCollision(player, item) {
     if (this.scene.popupOpen) return;
-
+    this.sfx = {
+      scope: this.scene.sound.add("scopeSfx", { volume: 0.5 }),
+      loupe: this.scene.sound.add("loupeSfx", { volume: 0.5 }),
+    };
+    if (this.scene.playerController.sfx.run.isPlaying) {
+      this.scene.playerController.sfx.run.stop();
+    }
     // Logic: Pick up Loupe
     if (item.isLoupe) {
+      this.sfx.loupe.play();
       this.scene.hasLoupe = true;
       item.destroy();
       document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
@@ -67,21 +74,17 @@ export class ItemManager {
       );
       return;
     }
-    // Logic: Locked Item Prevention (Spam Fix)
+    // Logic: Locked Item Prevention (Show Modal Only Once)
     if (item.locked && !this.scene.hasLoupe) {
       if (this.scene.canShowWarning) {
-        this.scene.canShowWarning = false;
+        this.scene.canShowWarning = false; // Permanent lock after first show
         document.getElementById("modal-feedback").innerText = ""; // CLEAR FEEDBACK HERE
-
         this.scene.modal.showInfoMessage(
-          "This slide is too complex! You need the Loupe first.",
+          "💡 This slide is too complex! You need the Loupe first.",
           true,
         );
-        this.scene.time.delayedCall(3000, () => {
-          this.scene.canShowWarning = true;
-        });
       }
-      return;
+      return; // Prevent interaction
     }
 
     // Logic: Open Menus
