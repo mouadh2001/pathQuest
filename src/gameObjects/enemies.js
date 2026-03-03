@@ -55,7 +55,7 @@ export class EnemyManager {
     newEnemy.maxX = original.maxX;
 
     // 🔥 Small visual offset ONLY on position (not range)
-    newEnemy.x += 150;
+    newEnemy.x += 170;
 
     return newEnemy;
   }
