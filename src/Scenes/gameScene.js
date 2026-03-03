@@ -50,6 +50,7 @@ export default class GameScene extends Phaser.Scene {
     this.hasLoupe = false;
     this.canShowWarning = true;
     this.correctcount = 0;
+    this.incorrectcount = 0;
 
     this.physics.world.gravity.y = 1300;
     const worldWidth = 1320;
@@ -57,7 +58,7 @@ export default class GameScene extends Phaser.Scene {
 
     //progressbar
     this.progressBar = this.add.rectangle(
-      150,
+      380,
       30,
       this.correctcount,
       20,
@@ -65,6 +66,16 @@ export default class GameScene extends Phaser.Scene {
     );
     this.progressBar.setOrigin(0, 0.5);
     this.progressBar.setDepth(2000);
+    //Savois acquis
+
+    this.savois = this.add
+      .text(150, 20, "|  Savois acquis:", {
+        fontSize: "22px",
+        fill: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
 
     // 1. Background
     let bg = this.add.image(0, 0, "bg").setOrigin(0, 0);
@@ -115,13 +126,13 @@ export default class GameScene extends Phaser.Scene {
     // 6. Enemies
     this.enemies = this.physics.add.group();
     this.enemyManager = new EnemyManager(this);
-    this.enemyManager.createEnemyRelative(530, 330, 400, 100);
+    this.enemyManager.createEnemyRelative(530, 330, 400, 100, "E1");
     this.enemyManager2 = new EnemyManager(this);
-    this.enemyManager2.createEnemyRelative(650, 40, 1000, 100);
+    this.enemyManager2.createEnemyRelative(650, 40, 1000, 100, "E2");
     this.enemyManager3 = new EnemyManager(this);
-    this.enemyManager3.createEnemyRelative(210, 440, 400, 100);
+    this.enemyManager3.createEnemyRelative(210, 440, 400, 100, "E3");
     this.enemyManager4 = new EnemyManager(this);
-    this.enemyManager4.createEnemyRelative(1020, 440, 550, 100);
+    this.enemyManager4.createEnemyRelative(1020, 440, 550, 100, "E4");
 
     // overlaps
     this.physics.add.overlap(

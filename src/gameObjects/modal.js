@@ -191,7 +191,7 @@ export class ModalUI {
           b.style.color = "#15803d";
 
           // Show Correct Feedback
-          feedback.innerText = data.fbc || "✅ Correct !";
+          feedback.innerText = data.fbc || "Correct !";
           feedback.style.color = "#166534";
 
           this.scene.time.delayedCall(3000, () => {
@@ -205,13 +205,23 @@ export class ModalUI {
           b.style.color = "#b91c1c";
 
           // Show Wrong Feedback
-          feedback.innerText = data.fbw || "❌ Incorrect. Try again!";
-          feedback.style.color = "#7f1d1d";
+          feedback.innerText = data.fbw || "Incorrect. Try again!";
+          feedback.style.color = "#ed9f18";
 
           this.scene.time.delayedCall(3000, () => {
-            if (this.scene.currentScope) this.scene.currentScope.destroy();
             this.closeModal();
             this.scene.playerController.respawn();
+            this.scene.incorrectcount++;
+            if (this.scene.incorrectcount == 1) {
+              this.scene.enemyManager.duplicateEnemyByName("E1", "E5");
+            } else if (this.scene.incorrectcount == 2) {
+              this.scene.enemyManager.increaseEnemySpeedByName("E1", 50);
+              this.scene.enemyManager.increaseEnemySpeedByName("E5", 50);
+            } else if (this.scene.incorrectcount == 3) {
+              this.scene.enemyManager.increaseEnemySpeedByName("E3", 50);
+            } else if (this.scene.incorrectcount == 4) {
+              this.scene.enemyManager.increaseEnemySpeedByName("E4", 50);
+            }
           });
         }
       };

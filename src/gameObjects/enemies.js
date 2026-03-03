@@ -4,11 +4,12 @@ export class EnemyManager {
     this.scene = scene;
   }
 
-  createEnemyRelative(x, heightAboveFloor, range, speed) {
+  createEnemyRelative(x, heightAboveFloor, range, speed, name) {
     const { scene } = this;
     const y = scene.floorY - heightAboveFloor;
     const enemy = scene.enemies.create(x, y, "enemy");
     enemy.setScale(0.3).setDepth(3);
+    enemy.name = name;
     // Resize physics body manually
     enemy.body.setSize(enemy.width * 0.3, enemy.height * 0.3);
     enemy.setCollideWorldBounds(false); // IMPORTANT
@@ -22,6 +23,41 @@ export class EnemyManager {
     enemy.minX = x - patrolWidth / 2 + 30; // left edge limit
     enemy.maxX = x + patrolWidth / 2 - 30; // right edge limit
     return enemy;
+  }
+  // Increase speed of a specific enemy by name
+  increaseEnemySpeedByName(name, amount = 20) {
+    this.scene.enemies.children.iterate((enemy) => {
+      if (!enemy) return;
+      if (enemy.name === name) {
+        enemy.speed += amount;
+      }
+    });
+  }
+
+  duplicateEnemyByName(originalName, newName) {
+    const enemies = this.scene.enemies.getChildren();
+    const original = enemies.find((e) => e.name === originalName);
+    if (!original) return;
+
+    const heightAboveFloor = this.scene.floorY - original.y;
+
+    // Create enemy at same center position
+    const newEnemy = this.createEnemyRelative(
+      original.x, // use SAME center
+      heightAboveFloor,
+      original.maxX - original.minX,
+      original.speed,
+      newName,
+    );
+
+    // 🔥 Copy exact patrol limits
+    newEnemy.minX = original.minX;
+    newEnemy.maxX = original.maxX;
+
+    // 🔥 Small visual offset ONLY on position (not range)
+    newEnemy.x += 40;
+
+    return newEnemy;
   }
 
   update() {
